@@ -1,7 +1,7 @@
 Git and GitHub – Learning Notes
 ===============================
 
-Name: Anshul Mohanty    Roll No: 24BCS10191
+Name: Anshul Mohanty    Roll No: 24BCS10191    Section: A
 
 ## In one line
 

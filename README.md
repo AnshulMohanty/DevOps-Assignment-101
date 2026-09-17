@@ -3,6 +3,7 @@ DevOps Assignment
 
 **Name:** Anshul Mohanty
 **Roll No:** 24BCS10191
+**Section:** A
 
 Every topic has its own folder with a `README.md` containing the commands I ran, screenshots
 of the terminal output, the same output as text, and what I understood from it.

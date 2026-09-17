@@ -1,6 +1,6 @@
 #!/bin/bash
 # System Information Script - DevOps Homework (Shell Scripting)
-# Name: Anshul Mohanty   Roll No: 24BCS10191
+# Name: Anshul Mohanty   Roll No: 24BCS10191   Section: A
 
 # Variables to store and reuse data
 current_date=$(date)
