@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+data:
+  APP_NAME: "DevOps Assignment App"
+  APP_ENV: "production"
+  STUDENT_NAME: "Anshul Mohanty"
+  ROLL_NO: "24BCS10191"

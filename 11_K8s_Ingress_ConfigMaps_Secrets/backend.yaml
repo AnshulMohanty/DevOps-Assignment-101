@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      containers:
+        - name: backend
+          image: nginx:alpine
+          ports:
+            - containerPort: 80
+          # all ConfigMap keys become environment variables
+          envFrom:
+            - configMapRef:
+                name: app-config
+          # individual Secret values pulled in one at a time
+          env:
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: db-secret
+                  key: DB_USER
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: db-secret
+                  key: DB_PASSWORD
+          command:
+            - /bin/sh
+            - -c
+            - |
+              cat > /usr/share/nginx/html/index.html <<HTML
+              <h1>BACKEND</h1>
+              <p>APP_NAME     = $APP_NAME</p>
+              <p>APP_ENV      = $APP_ENV</p>
+              <p>STUDENT_NAME = $STUDENT_NAME</p>
+              <p>ROLL_NO      = $ROLL_NO</p>
+              <p>DB_USER      = $DB_USER</p>
+              HTML
+              nginx -g 'daemon off;'
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-svc
+spec:
+  selector:
+    app: backend
+  ports:
+    - port: 80
+      targetPort: 80
