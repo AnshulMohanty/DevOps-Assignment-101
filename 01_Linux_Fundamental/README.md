@@ -3,6 +3,8 @@ Linux Fundamentals – Homework
 
 Name: Anshul Mohanty    Roll No: 24BCS10191
 
+See also: [LEARNING.md](LEARNING.md) - diagram and revision notes for this topic.
+
 Environment: Ubuntu 24.04 container on Docker Desktop (Windows 11 host).
 Task 3 needs a running init system, so it was done in a second container started with
 `/sbin/init` as PID 1 so that systemd and journald are actually running.

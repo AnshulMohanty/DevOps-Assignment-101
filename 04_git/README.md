@@ -3,6 +3,8 @@ Git and GitHub – Homework
 
 Name: Anshul Mohanty    Roll No: 24BCS10191
 
+See also: [LEARNING.md](LEARNING.md) - diagram and revision notes for this topic.
+
 Environment: Ubuntu 24.04 container, git 2.43. Everything below was run in a throwaway repo
 at `~/git-demo` so the assignment repo itself stays clean.
 

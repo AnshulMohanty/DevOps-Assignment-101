@@ -3,6 +3,8 @@ Kubernetes Core Objects – Pods, ReplicaSets, Deployments
 
 Name: Anshul Mohanty    Roll No: 24BCS10191
 
+See also: [LEARNING.md](LEARNING.md) - diagram and revision notes for this topic.
+
 Cluster: **single-node minikube v1.37.0** (docker driver, containerd).
 All objects were created in a dedicated `devops-hw` namespace so the output is not mixed up
 with anything else on the cluster.

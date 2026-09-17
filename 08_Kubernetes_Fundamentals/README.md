@@ -3,6 +3,8 @@ Kubernetes Fundamentals – Homework
 
 Name: Anshul Mohanty    Roll No: 24BCS10191
 
+See also: [LEARNING.md](LEARNING.md) - diagram and revision notes for this topic.
+
 Cluster used: **minikube v1.37.0, single node, docker driver**, Kubernetes v1.37.0 with
 containerd as the runtime. The node runs Debian 12 inside a container on Docker Desktop.
 

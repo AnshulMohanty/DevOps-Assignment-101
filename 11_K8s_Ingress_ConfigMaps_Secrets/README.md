@@ -3,6 +3,8 @@ Kubernetes Ingress, ConfigMaps and Secrets – Homework
 
 Name: Anshul Mohanty    Roll No: 24BCS10191
 
+See also: [LEARNING.md](LEARNING.md) - diagram and revision notes for this topic.
+
 Cluster: single-node minikube v1.37.0, namespace `devops-hw`.
 Ingress controller: the **NGINX** controller installed with `minikube addons enable ingress`.
 

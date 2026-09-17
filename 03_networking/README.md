@@ -3,6 +3,8 @@ Networking – Homework
 
 Name: Anshul Mohanty    Roll No: 24BCS10191
 
+See also: [LEARNING.md](LEARNING.md) - diagram and revision notes for this topic.
+
 Environment: Ubuntu 24.04 container on Docker Desktop. The container sits on Docker's default
 bridge network `172.17.0.0/16`, with the gateway `172.17.0.1` acting as its router.
 

@@ -3,6 +3,8 @@ Docker Fundamentals – Homework
 
 Name: Anshul Mohanty    Roll No: 24BCS10191
 
+See also: [LEARNING.md](LEARNING.md) - diagram and revision notes for this topic.
+
 Environment: Docker Engine 29.5.3 via Docker Desktop on Windows 11. Commands were run from
 Git Bash on the host.
 

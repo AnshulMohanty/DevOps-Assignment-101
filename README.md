@@ -12,19 +12,19 @@ of the terminal output, the same output as text, and what I understood from it.
 Contents
 --------
 
-| # | Topic | Covers |
-|---|---|---|
-| 01 | [Linux Fundamentals](01_Linux_Fundamental/README.md) | Hard vs soft links, `useradd` vs `adduser`, `journalctl`, command reference |
-| 02 | [Shell Scripting](02_shell_scripting/README.md) | System information script - variables, `read`, redirection |
-| 03 | [Networking](03_networking/README.md) | IP addressing and subnetting, interfaces, DNS, connectivity, ports |
-| 04 | [Git and GitHub](04_git/README.md) | Init, commits, branching, merging, conflict resolution |
-| 05 | [Docker Fundamentals](05_Docker_Fundamental/README.md) | Images vs containers, run/ps/exec/logs/inspect, lifecycle |
-| 06 | [Dockerfiles and Images](06_DockerFiles_Images/README.md) | Multi-stage builds, image size, six application types |
-| 07 | [Docker Networking and Volumes](07_Docker_Networking/README.md) | bridge/host/none, container DNS, volume persistence |
-| 08 | [Kubernetes Fundamentals](08_Kubernetes_Fundamentals/README.md) | Cluster architecture, control plane components, namespaces |
-| 09 | [Pods, ReplicaSets, Deployments](09_K8s_Pods_ReplicaSets_Deployments/README.md) | Self-healing, rolling updates, rollback, DaemonSets, taints |
-| 10 | [Kubernetes Services](10_K8s_Networking_Services/README.md) | ClusterIP, NodePort, LoadBalancer, ExternalName, headless, DNS |
-| 11 | [Ingress, ConfigMaps, Secrets](11_K8s_Ingress_ConfigMaps_Secrets/README.md) | Config injection, base64 secrets, host/path routing |
+| # | Topic | Covers | Learning |
+|---|---|---|---|
+| 01 | [Linux Fundamentals](01_Linux_Fundamental/README.md) | Hard vs soft links, `useradd` vs `adduser`, `journalctl`, command reference | [notes](01_Linux_Fundamental/LEARNING.md) |
+| 02 | [Shell Scripting](02_shell_scripting/README.md) | System information script - variables, `read`, redirection | [notes](02_shell_scripting/LEARNING.md) |
+| 03 | [Networking](03_networking/README.md) | IP addressing and subnetting, interfaces, DNS, connectivity, ports | [notes](03_networking/LEARNING.md) |
+| 04 | [Git and GitHub](04_git/README.md) | Init, commits, branching, merging, conflict resolution | [notes](04_git/LEARNING.md) |
+| 05 | [Docker Fundamentals](05_Docker_Fundamental/README.md) | Images vs containers, run/ps/exec/logs/inspect, lifecycle | [notes](05_Docker_Fundamental/LEARNING.md) |
+| 06 | [Dockerfiles and Images](06_DockerFiles_Images/README.md) | Multi-stage builds, image size, six application types | [notes](06_DockerFiles_Images/LEARNING.md) |
+| 07 | [Docker Networking and Volumes](07_Docker_Networking/README.md) | bridge/host/none, container DNS, volume persistence | [notes](07_Docker_Networking/LEARNING.md) |
+| 08 | [Kubernetes Fundamentals](08_Kubernetes_Fundamentals/README.md) | Cluster architecture, control plane components, namespaces | [notes](08_Kubernetes_Fundamentals/LEARNING.md) |
+| 09 | [Pods, ReplicaSets, Deployments](09_K8s_Pods_ReplicaSets_Deployments/README.md) | Self-healing, rolling updates, rollback, DaemonSets, taints | [notes](09_K8s_Pods_ReplicaSets_Deployments/LEARNING.md) |
+| 10 | [Kubernetes Services](10_K8s_Networking_Services/README.md) | ClusterIP, NodePort, LoadBalancer, ExternalName, headless, DNS | [notes](10_K8s_Networking_Services/LEARNING.md) |
+| 11 | [Ingress, ConfigMaps, Secrets](11_K8s_Ingress_ConfigMaps_Secrets/README.md) | Config injection, base64 secrets, host/path routing | [notes](11_K8s_Ingress_ConfigMaps_Secrets/LEARNING.md) |
 
 ---
 
