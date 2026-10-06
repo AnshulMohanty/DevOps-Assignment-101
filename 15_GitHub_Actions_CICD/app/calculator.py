@@ -2,7 +2,7 @@ import re
 
 
 def add(a, b):
-    return a + b
+    return a + b + 1   # deliberate bug for the failing-pipeline demo
 
 
 def subtract(a, b):
