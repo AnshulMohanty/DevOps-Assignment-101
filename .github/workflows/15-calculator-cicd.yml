@@ -1,0 +1,205 @@
+# Topic 15 - CI/CD for the calculator app in 15_GitHub_Actions_CICD/.
+#
+# CI  (every push / PR):  test on a matrix of runners -> security check + build + use a secret
+# CD  (main branch only): publish the Docker image to GHCR -> deploy it and smoke-test it
+#
+# GitHub only reads workflows from the repository root, so this file lives here and
+# uses path filters + a default working-directory to act on its own folder.
+
+name: "15 - Calculator CI/CD"
+
+on:
+  push:
+    branches: [main, "ci-demo/**"]
+    paths:
+      - "15_GitHub_Actions_CICD/**"
+      - ".github/workflows/15-calculator-cicd.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "15_GitHub_Actions_CICD/**"
+      - ".github/workflows/15-calculator-cicd.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  APP_DIR: 15_GitHub_Actions_CICD
+  IMAGE: ghcr.io/anshulmohanty/devops-calculator
+
+defaults:
+  run:
+    shell: bash
+    working-directory: 15_GitHub_Actions_CICD
+
+jobs:
+  # ---------------------------------------------------------------- CI
+  test:
+    name: Test (${{ matrix.os }}, Python ${{ matrix.python }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python: ["3.12", "3.13"]
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v7
+
+      - name: Set up Python ${{ matrix.python }}
+        uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run unit tests
+        run: pytest -v --junitxml=test-results.xml
+
+      - name: Upload test report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-report-${{ matrix.os }}-py${{ matrix.python }}
+          path: ${{ env.APP_DIR }}/test-results.xml
+
+  security-check:
+    name: Security check
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v7
+
+      - name: Look for committed secret files
+        run: |
+          found=$(find . -type f \( -name ".env" -o -name "*.pem" -o -name "*.key" \))
+          if [ -n "$found" ]; then
+            echo "Sensitive files committed:"
+            echo "$found"
+            exit 1
+          fi
+          echo "No .env, .pem or .key files in $APP_DIR"
+
+  build:
+    name: Build and smoke-test image
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v7
+
+      - name: Build application bundle
+        run: |
+          chmod +x build.sh
+          ./build.sh
+          cat build/build-info.txt
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: calculator-build
+          path: ${{ env.APP_DIR }}/build/
+
+      - name: Build Docker image
+        run: docker build --build-arg APP_VERSION="${GITHUB_SHA::7}" -t calculator:ci .
+
+      - name: Smoke-test the container
+        run: |
+          docker run -d --name calc -p 8000:8000 calculator:ci
+          for i in $(seq 1 10); do curl -sf localhost:8000/health && break; sleep 1; done
+          echo
+          curl -sf "localhost:8000/add?a=2&b=3"
+          echo
+          docker rm -f calc
+
+  secrets-demo:
+    name: Use a repository secret
+    needs: test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: .
+    steps:
+      - name: Read DEMO_SECRET
+        env:
+          DEMO_SECRET: ${{ secrets.DEMO_SECRET }}
+        run: |
+          if [ -z "$DEMO_SECRET" ]; then
+            echo "::warning::DEMO_SECRET is not configured for this repository"
+            exit 0
+          fi
+          echo "Trying to print the secret: $DEMO_SECRET"
+          echo "The secret is ${#DEMO_SECRET} characters long"
+
+  # ---------------------------------------------------------------- CD
+  release:
+    name: Publish image to GHCR
+    needs: [build, security-check]
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v7
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v7
+        with:
+          context: ${{ env.APP_DIR }}
+          push: true
+          build-args: APP_VERSION=${{ github.sha }}
+          labels: org.opencontainers.image.source=https://github.com/${{ github.repository }}
+          tags: |
+            ${{ env.IMAGE }}:${{ github.sha }}
+            ${{ env.IMAGE }}:latest
+
+  deploy:
+    name: Deploy to production
+    needs: release
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+    permissions:
+      packages: read
+    defaults:
+      run:
+        working-directory: .
+    steps:
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Pull the image that was just published
+        run: docker pull "$IMAGE:$GITHUB_SHA"
+
+      - name: Start the new version
+        run: docker run -d --name calculator -p 8000:8000 "$IMAGE:$GITHUB_SHA"
+
+      - name: Smoke test
+        run: |
+          for i in $(seq 1 10); do curl -sf localhost:8000/health && break; sleep 1; done
+          echo
+          version=$(curl -sf localhost:8000/health | python3 -c "import sys, json; print(json.load(sys.stdin)['version'])")
+          result=$(curl -sf "localhost:8000/multiply?a=6&b=7" | python3 -c "import sys, json; print(json.load(sys.stdin)['result'])")
+          echo "deployed version: $version"
+          echo "6 x 7 = $result"
+          [ "$version" = "$GITHUB_SHA" ] || { echo "wrong version is running"; exit 1; }
+          [ "$result" = "42.0" ] || { echo "wrong answer"; exit 1; }
+          echo "Deployment verified"
