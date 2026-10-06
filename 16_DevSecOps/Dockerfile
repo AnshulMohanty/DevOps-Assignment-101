@@ -16,4 +16,6 @@ USER 10001
 
 EXPOSE 5001
 # a production WSGI server instead of Flask's development server
-CMD ["gunicorn", "--bind", "0.0.0.0:5001", "--workers", "2", "--access-logfile", "-", "app.app:app"]
+# --no-control-socket: gunicorn 26 otherwise writes a control socket into $HOME, which fails on the
+# read-only root filesystem used in k8s/deployment.yaml (and the control interface is not needed)
+CMD ["gunicorn", "--bind", "0.0.0.0:5001", "--workers", "2", "--no-control-socket", "--access-logfile", "-", "app.app:app"]
