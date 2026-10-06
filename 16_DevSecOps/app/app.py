@@ -233,4 +233,4 @@ def server_error(e):
 if __name__ == "__main__":
     # Local development only. In the container the app is served by gunicorn (see Dockerfile).
     # debug=True exposes the Werkzeug debugger (remote code execution) - never hard-code it.
-    app.run(host="127.0.0.1", port=5001, debug=os.environ.get("FLASK_DEBUG") == "1")
+    app.run(host="0.0.0.0", port=5001, debug=True)
