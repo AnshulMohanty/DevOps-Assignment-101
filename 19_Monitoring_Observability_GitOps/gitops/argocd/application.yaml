@@ -1,0 +1,22 @@
+# Tells Argo CD: keep namespace gitops-demo identical to the app/ folder of this repo's main branch.
+# This file lives OUTSIDE the synced folder, otherwise the Application would be managing itself.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: gitops-demo
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/AnshulMohanty/DevOps-Assignment-101.git
+    targetRevision: main
+    path: 19_Monitoring_Observability_GitOps/gitops/app
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: gitops-demo
+  syncPolicy:
+    automated:
+      prune: true      # delete what was removed from Git
+      selfHeal: true   # undo changes made directly in the cluster
+    syncOptions:
+      - CreateNamespace=true
