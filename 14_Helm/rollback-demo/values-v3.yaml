@@ -1,0 +1,4 @@
+replicaCount: 3
+image:
+  tag: "1.27-alpine"
+message: "Version 3 - alpine image, 3 replicas"

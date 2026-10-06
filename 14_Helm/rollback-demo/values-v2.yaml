@@ -1,0 +1,4 @@
+replicaCount: 2
+image:
+  tag: "1.27"
+message: "Version 2 - upgraded to nginx 1.27"
