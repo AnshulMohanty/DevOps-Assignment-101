@@ -85,43 +85,43 @@ gateway in the public subnet, and one route table for each subnet.
 ![VPC on LocalStack](../../screenshots/11_vpc.png)
 
 ```
-$ awslocal() { docker exec localstack awslocal "$@"; }
+$ awslocal() { docker exec -e AWS_DEFAULT_REGION=ap-south-1 localstack awslocal "$@"; }
 $ awslocal ec2 create-vpc --cidr-block 10.0.0.0/16 --query Vpc.VpcId --output text
-vpc-efd7bdf86b3d17fd2
-$ awslocal ec2 create-subnet --vpc-id vpc-efd7bdf86b3d17fd2 --cidr-block 10.0.1.0/24 --availability-zone ap-south-1a --query Subnet.SubnetId --output text
-subnet-0c18b1d1061a285b2
-$ awslocal ec2 create-subnet --vpc-id vpc-efd7bdf86b3d17fd2 --cidr-block 10.0.2.0/24 --availability-zone ap-south-1a --query Subnet.SubnetId --output text
-subnet-b227f228a3ad8848d
+vpc-4f357440176d3f9a7
+$ awslocal ec2 create-subnet --vpc-id vpc-4f357440176d3f9a7 --cidr-block 10.0.1.0/24 --availability-zone ap-south-1a --query Subnet.SubnetId --output text
+subnet-685e9fdbba3b139a3
+$ awslocal ec2 create-subnet --vpc-id vpc-4f357440176d3f9a7 --cidr-block 10.0.2.0/24 --availability-zone ap-south-1a --query Subnet.SubnetId --output text
+subnet-1458c1061a8cd1ba6
 $ # public subnet: route 0.0.0.0/0 to an Internet Gateway
 $ awslocal ec2 create-internet-gateway --query InternetGateway.InternetGatewayId --output text
-igw-b556415afa7b0d115
-$ awslocal ec2 attach-internet-gateway --vpc-id vpc-efd7bdf86b3d17fd2 --internet-gateway-id igw-b556415afa7b0d115
-$ awslocal ec2 create-route-table --vpc-id vpc-efd7bdf86b3d17fd2 --query RouteTable.RouteTableId --output text
-rtb-b34592979c6e7d2e7
-$ awslocal ec2 create-route --route-table-id rtb-b34592979c6e7d2e7 --destination-cidr-block 0.0.0.0/0 --gateway-id igw-b556415afa7b0d115 --query Return
+igw-a83ffd584de667e13
+$ awslocal ec2 attach-internet-gateway --vpc-id vpc-4f357440176d3f9a7 --internet-gateway-id igw-a83ffd584de667e13
+$ awslocal ec2 create-route-table --vpc-id vpc-4f357440176d3f9a7 --query RouteTable.RouteTableId --output text
+rtb-8a229fd680b630552
+$ awslocal ec2 create-route --route-table-id rtb-8a229fd680b630552 --destination-cidr-block 0.0.0.0/0 --gateway-id igw-a83ffd584de667e13 --query Return
 true
-$ awslocal ec2 associate-route-table --route-table-id rtb-b34592979c6e7d2e7 --subnet-id subnet-0c18b1d1061a285b2 --query AssociationId --output text
-rtbassoc-a40ac0f9487869da0
+$ awslocal ec2 associate-route-table --route-table-id rtb-8a229fd680b630552 --subnet-id subnet-685e9fdbba3b139a3 --query AssociationId --output text
+rtbassoc-994d3aca279d273bc
 $ # private subnet: outbound-only internet through a NAT Gateway that sits in the PUBLIC subnet
 $ awslocal ec2 allocate-address --domain vpc --query AllocationId --output text
-eipalloc-14c4259c846883bd6
-$ awslocal ec2 create-nat-gateway --subnet-id subnet-0c18b1d1061a285b2 --allocation-id eipalloc-14c4259c846883bd6 --query NatGateway.NatGatewayId --output text
-nat-c715ff214195e7f5a
-$ awslocal ec2 create-route-table --vpc-id vpc-efd7bdf86b3d17fd2 --query RouteTable.RouteTableId --output text
-rtb-77ffa74b3eee03f16
-$ awslocal ec2 create-route --route-table-id rtb-77ffa74b3eee03f16 --destination-cidr-block 0.0.0.0/0 --nat-gateway-id nat-c715ff214195e7f5a --query Return
+eipalloc-6e6b53763d390b255
+$ awslocal ec2 create-nat-gateway --subnet-id subnet-685e9fdbba3b139a3 --allocation-id eipalloc-6e6b53763d390b255 --query NatGateway.NatGatewayId --output text
+nat-c1b6ce7b79f8b82e6
+$ awslocal ec2 create-route-table --vpc-id vpc-4f357440176d3f9a7 --query RouteTable.RouteTableId --output text
+rtb-9a5456c47e7713980
+$ awslocal ec2 create-route --route-table-id rtb-9a5456c47e7713980 --destination-cidr-block 0.0.0.0/0 --nat-gateway-id nat-c1b6ce7b79f8b82e6 --query Return
 true
-$ awslocal ec2 associate-route-table --route-table-id rtb-77ffa74b3eee03f16 --subnet-id subnet-b227f228a3ad8848d --query AssociationId --output text
-rtbassoc-a705aba90ea072515
+$ awslocal ec2 associate-route-table --route-table-id rtb-9a5456c47e7713980 --subnet-id subnet-1458c1061a8cd1ba6 --query AssociationId --output text
+rtbassoc-7e8affd41b97432d9
 
-$ awslocal ec2 describe-route-tables --filters Name=vpc-id,Values=vpc-efd7bdf86b3d17fd2 --query 'RouteTables[?Associations[0].SubnetId].[Associations[0].SubnetId,Routes[].[DestinationCidrBlock,GatewayId||NatGatewayId]]' --output text
-subnet-0c18b1d1061a285b2
+$ awslocal ec2 describe-route-tables --filters Name=vpc-id,Values=vpc-4f357440176d3f9a7 --query 'RouteTables[?Associations[0].SubnetId].[Associations[0].SubnetId,Routes[].[DestinationCidrBlock,GatewayId||NatGatewayId]]' --output text
+subnet-685e9fdbba3b139a3
 10.0.0.0/16	local
-0.0.0.0/0	igw-b556415afa7b0d115
-subnet-b227f228a3ad8848d
+0.0.0.0/0	igw-a83ffd584de667e13
+subnet-1458c1061a8cd1ba6
 10.0.0.0/16	local
-0.0.0.0/0	nat-c715ff214195e7f5a
-$ awslocal ec2 describe-network-acls --filters Name=vpc-id,Values=vpc-efd7bdf86b3d17fd2 --query 'NetworkAcls[0].Entries[?Egress==`false`].[RuleNumber,Protocol,CidrBlock,RuleAction]' --output text
+0.0.0.0/0	nat-c1b6ce7b79f8b82e6
+$ awslocal ec2 describe-network-acls --filters Name=vpc-id,Values=vpc-4f357440176d3f9a7 --query 'NetworkAcls[0].Entries[?Egress==`false`].[RuleNumber,Protocol,CidrBlock,RuleAction]' --output text
 100	-1	0.0.0.0/0	allow
 32767	-1	0.0.0.0/0	deny
 ```
