@@ -1,0 +1,20 @@
+# Liveness probe pointing at a path that does not exist.
+# nginx answers 404, the probe fails 3 times, and the kubelet RESTARTS the container.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: liveness-demo
+spec:
+  containers:
+    - name: nginx
+      image: nginx:1.27
+      ports:
+        - containerPort: 80
+      livenessProbe:
+        httpGet:
+          path: /crash            # wrong on purpose
+          port: 80
+        initialDelaySeconds: 5
+        periodSeconds: 5
+        timeoutSeconds: 2
+        failureThreshold: 3

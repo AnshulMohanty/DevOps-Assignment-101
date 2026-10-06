@@ -1,0 +1,13 @@
+# The original claim from the class repo. With no storageClassName the cluster's
+# DEFAULT StorageClass is applied, so this gets a brand-new dynamic volume
+# instead of binding to student-pv.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: student-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 500Mi

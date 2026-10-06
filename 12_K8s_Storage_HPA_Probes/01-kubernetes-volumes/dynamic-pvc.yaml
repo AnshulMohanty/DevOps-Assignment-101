@@ -1,0 +1,12 @@
+# No PV is created by hand - the "standard" StorageClass provisions one on demand.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: dynamic-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: standard
+  resources:
+    requests:
+      storage: 500Mi

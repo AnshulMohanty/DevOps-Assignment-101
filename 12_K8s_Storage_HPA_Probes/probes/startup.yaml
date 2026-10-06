@@ -1,0 +1,29 @@
+# A slow-starting app: nginx only starts listening after 25 seconds.
+# The startup probe gives it up to 30 x 2s = 60s; liveness/readiness only begin after it passes.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: startup-demo
+spec:
+  containers:
+    - name: nginx
+      image: nginx:1.27
+      command: ["sh", "-c", "echo 'warming up...'; sleep 25; exec nginx -g 'daemon off;'"]
+      ports:
+        - containerPort: 80
+      startupProbe:
+        httpGet:
+          path: /
+          port: 80
+        failureThreshold: 30
+        periodSeconds: 2
+      livenessProbe:
+        httpGet:
+          path: /
+          port: 80
+        periodSeconds: 5
+      readinessProbe:
+        httpGet:
+          path: /
+          port: 80
+        periodSeconds: 5
