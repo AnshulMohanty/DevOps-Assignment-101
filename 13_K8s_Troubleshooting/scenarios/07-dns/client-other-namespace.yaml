@@ -1,0 +1,16 @@
+# A client in a DIFFERENT namespace trying to reach web-service by its short name.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: frontend
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: client
+  namespace: frontend
+spec:
+  containers:
+    - name: client
+      image: curlimages/curl:8.6.0
+      command: ["sleep", "3600"]

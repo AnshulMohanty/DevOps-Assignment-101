@@ -1,0 +1,14 @@
+# FIX: bind to 0.0.0.0 so the Pod IP accepts connections.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: api-pod
+  labels:
+    app: api
+spec:
+  containers:
+    - name: api
+      image: python:3.11-alpine
+      command: ["python3", "-m", "http.server", "8000", "--bind", "0.0.0.0"]     # FIX: listen on all interfaces
+      ports:
+        - containerPort: 8000

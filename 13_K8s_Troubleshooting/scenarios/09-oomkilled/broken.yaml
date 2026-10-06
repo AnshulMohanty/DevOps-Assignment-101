@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: oom-pod
+spec:
+  containers:
+    - name: memory-hungry
+      image: python:3.11-alpine
+      command:
+        - "python3"
+        - "-c"
+        - |
+          import time
+          print("Loading 100 MB of data into memory...", flush=True)
+          data = [b"x" * (10 * 1024 * 1024) for _ in range(10)]
+          print("Loaded. Serving...", flush=True)
+          while True:
+              time.sleep(60)
+      resources:
+        limits:
+          memory: "20Mi"      # BUG: the process needs ~110Mi

@@ -1,0 +1,15 @@
+# The app only listens on 127.0.0.1, so it works from inside its own container
+# but nothing else in the cluster can reach it on the Pod IP.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: api-pod
+  labels:
+    app: api
+spec:
+  containers:
+    - name: api
+      image: python:3.11-alpine
+      command: ["python3", "-m", "http.server", "8000", "--bind", "127.0.0.1"]   # BUG
+      ports:
+        - containerPort: 8000

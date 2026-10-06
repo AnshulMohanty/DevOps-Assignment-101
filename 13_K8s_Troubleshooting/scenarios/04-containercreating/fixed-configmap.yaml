@@ -1,0 +1,9 @@
+# FIX: create the ConfigMap the Pod mounts. The Pod itself does not change.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-settings
+data:
+  app.conf: |
+    mode=production
+    log_level=info

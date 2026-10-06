@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pending-pod
+spec:
+  containers:
+    - name: hungry-app
+      image: nginx:alpine
+      resources:
+        requests:
+          cpu: "500"          # BUG: 500 CPU cores - no node has that
+          memory: "1000Gi"    # BUG: 1000 GiB of RAM

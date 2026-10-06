@@ -1,0 +1,12 @@
+# The "Service problem" challenge: the selector no longer matches any Pod label.
+apiVersion: v1
+kind: Service
+metadata:
+  name: troubleshooting-service
+spec:
+  type: ClusterIP
+  selector:
+    app: wrong-app
+  ports:
+    - port: 80
+      targetPort: 80
