@@ -1,0 +1,7 @@
+tests/
+security/
+k8s/
+screenshots/
+**/__pycache__/
+.coverage
+*.md

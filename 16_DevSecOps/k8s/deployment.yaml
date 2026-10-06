@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: devsecops-flask
+  labels:
+    app: devsecops-flask
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: devsecops-flask
+  template:
+    metadata:
+      labels:
+        app: devsecops-flask
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+      containers:
+        - name: app
+          # __IMAGE_TAG__ is replaced with the commit SHA by the pipeline
+          image: ghcr.io/anshulmohanty/devsecops-flask:__IMAGE_TAG__
+          ports:
+            - containerPort: 5001
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 5001
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 5001
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 250m
+              memory: 192Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: tmp              # gunicorn needs a writable /tmp for worker heartbeats
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}

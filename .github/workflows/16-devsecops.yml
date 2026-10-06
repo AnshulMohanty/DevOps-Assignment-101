@@ -1,0 +1,295 @@
+# Topic 16 - CI/CD + DevSecOps for the Flask app in 16_DevSecOps/.
+#
+#   build & unit test
+#     -> SAST (Bandit, CodeQL) | SCA (pip-audit) | secret scan (gitleaks) | docker build -> image scan (Trivy)
+#     -> security gate (security/gate.py reads every report and applies the policy)
+#     -> push image to GHCR -> deploy to Kubernetes (kind cluster on the runner) + smoke test
+#
+# Push and deploy only happen on main, and only if the gate passes.
+
+name: "16 - DevSecOps pipeline"
+
+on:
+  push:
+    branches: [main, "ci-demo/**"]
+    paths:
+      - "16_DevSecOps/**"
+      - ".github/workflows/16-devsecops.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "16_DevSecOps/**"
+      - ".github/workflows/16-devsecops.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  APP_DIR: 16_DevSecOps
+  IMAGE: ghcr.io/anshulmohanty/devsecops-flask
+  GITLEAKS_VERSION: "8.30.1"
+
+defaults:
+  run:
+    shell: bash
+    working-directory: 16_DevSecOps
+
+jobs:
+  # ------------------------------------------------------------------ build + test
+  build-test:
+    name: Build and unit test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements-dev.txt
+
+      - name: Build (byte-compile the app)
+        run: python -m compileall -q app && echo "byte-compiled OK"
+
+      - name: Unit tests with coverage
+        run: pytest --cov=app --cov-report=term --cov-report=xml -p no:warnings
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: coverage
+          path: ${{ env.APP_DIR }}/coverage.xml
+
+  # ------------------------------------------------------------------ security scans
+  sast:
+    name: SAST - Bandit
+    needs: build-test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - name: Install Bandit
+        run: pip install bandit==1.9.4
+
+      - name: Scan the source
+        run: |
+          bandit -r app -f custom --msg-template '{severity:<6} {test_id}  {relpath}:{line}  {msg}' || true
+          bandit -r app -q -f json -o bandit.json || true
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: report-bandit
+          path: ${{ env.APP_DIR }}/bandit.json
+
+  codeql:
+    name: SAST - CodeQL
+    needs: build-test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v4
+        with:
+          languages: python
+          build-mode: none
+          config: |
+            paths:
+              - 16_DevSecOps/app
+
+      - name: Analyze
+        uses: github/codeql-action/analyze@v4
+        with:
+          category: /16-devsecops
+
+  sca:
+    name: SCA - pip-audit
+    needs: build-test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - name: Install pip-audit
+        run: pip install pip-audit==2.10.1
+
+      - name: Audit pinned dependencies
+        run: |
+          pip-audit -r requirements.txt --progress-spinner off || true
+          pip-audit -r requirements.txt --progress-spinner off -f json -o pip-audit.json || true
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: report-pip-audit
+          path: ${{ env.APP_DIR }}/pip-audit.json
+
+  secret-scan:
+    name: Secret scan - gitleaks
+    needs: build-test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: .
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0          # the whole history, not just the latest commit
+
+      - name: Install gitleaks
+        run: |
+          curl -sSL "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" | tar -xz gitleaks
+          ./gitleaks version
+
+      - name: Scan every commit in the repository
+        run: ./gitleaks git . --redact -v --report-format json --report-path gitleaks.json --exit-code 0
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: report-gitleaks
+          path: gitleaks.json
+
+  docker-build:
+    name: Docker build
+    needs: build-test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Build image
+        run: docker build -t "$IMAGE:$GITHUB_SHA" .
+
+      - name: Save image for the scan and push jobs
+        run: docker save "$IMAGE:$GITHUB_SHA" | gzip > image.tar.gz
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: image
+          path: ${{ env.APP_DIR }}/image.tar.gz
+          retention-days: 1
+
+  image-scan:
+    name: Image scan - Trivy
+    needs: docker-build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: image
+
+      - name: Load image
+        working-directory: .
+        run: docker load < image.tar.gz
+
+      - name: Scan (table in the log)
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: ${{ env.IMAGE }}:${{ github.sha }}
+          severity: HIGH,CRITICAL
+          format: table
+          exit-code: "0"
+
+      - name: Scan (JSON report for the gate)
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: ${{ env.IMAGE }}:${{ github.sha }}
+          format: json
+          output: trivy.json
+          exit-code: "0"
+          skip-setup-trivy: true
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: report-trivy
+          path: trivy.json
+
+  # ------------------------------------------------------------------ gate
+  security-gate:
+    name: Security gate
+    needs: [sast, sca, secret-scan, image-scan]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: report-*
+          merge-multiple: true
+          path: ${{ env.APP_DIR }}/reports
+
+      - name: Apply the security policy
+        run: python3 security/gate.py reports
+
+  # ------------------------------------------------------------------ deliver + deploy
+  push:
+    name: Push image to GHCR
+    needs: security-gate
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    defaults:
+      run:
+        working-directory: .
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: image
+
+      - name: Load the exact image that was scanned
+        run: docker load < image.tar.gz
+
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push
+        run: |
+          docker tag "$IMAGE:$GITHUB_SHA" "$IMAGE:latest"
+          docker push "$IMAGE:$GITHUB_SHA"
+          docker push "$IMAGE:latest"
+
+  deploy:
+    name: Deploy to Kubernetes
+    needs: push
+    runs-on: ubuntu-latest
+    environment:
+      name: devsecops
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Create a kind cluster on the runner
+        uses: helm/kind-action@v1
+        with:
+          cluster_name: devsecops
+
+      - name: Deploy the image from GHCR
+        run: |
+          sed -i "s|__IMAGE_TAG__|${GITHUB_SHA}|" k8s/deployment.yaml
+          kubectl apply -f k8s/
+          kubectl rollout status deployment/devsecops-flask --timeout=180s
+          kubectl get pods -o wide
+
+      - name: Smoke test through the Service
+        run: |
+          kubectl port-forward service/devsecops-flask 8080:80 >/dev/null 2>&1 &
+          sleep 3
+          curl -sf localhost:8080/health
+          echo
+          curl -sf localhost:8080/api/status
+          echo
+          kubectl get deployment devsecops-flask -o jsonpath='{.spec.template.spec.containers[0].image}{"\n"}'
