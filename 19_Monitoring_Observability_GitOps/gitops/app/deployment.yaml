@@ -5,7 +5,7 @@ metadata:
   labels:
     app: web
 spec:
-  replicas: 2
+  replicas: 3
   selector:
     matchLabels:
       app: web
@@ -15,7 +15,7 @@ spec:
         app: web
       annotations:
         # bumped together with the ConfigMap so the Pods restart and serve the new page
-        demo/content-version: "1"
+        demo/content-version: "2"
     spec:
       containers:
         - name: nginx

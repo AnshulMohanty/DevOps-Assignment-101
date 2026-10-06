@@ -4,5 +4,5 @@ metadata:
   name: web-content
 data:
   index.html: |
-    <h1>GitOps demo - version 1</h1>
+    <h1>GitOps demo - version 2</h1>
     <p>Deployed by Argo CD from github.com/AnshulMohanty/DevOps-Assignment-101</p>
