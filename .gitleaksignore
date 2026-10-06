@@ -1,0 +1,5 @@
+# A randomly generated, never-valid "ghp_" token that ended up in 16_DevSecOps/README.md as
+# example output of the secret-scanning demo (commit edfaca9). Redacted in the next commit;
+# the finding stays in history, so it is listed here as a known false positive.
+# A REAL leaked token would instead have to be revoked - ignoring it here would not un-leak it.
+edfaca9b4ab855be04744004fc7978e7c706f087:16_DevSecOps/README.md:github-pat:188

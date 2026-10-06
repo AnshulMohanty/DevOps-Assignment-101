@@ -185,7 +185,7 @@ the app's dependencies; here it audits `requirements.txt`.)
 $ # secret scanning: a throwaway folder with a (fake, freshly generated) GitHub token pasted into code
 $ cat config.py
 # config.py - a developer pasted a token while testing
-GITHUB_TOKEN = "ghp_vsQZubwyLeRMZz5u8TRtAD6JoxLaLxpWXFiN"
+GITHUB_TOKEN = "ghp_************************************"
 DEBUG = False
 $ docker run --rm -v "$(pwd -W):/scan" zricethezav/gitleaks:latest dir /scan --no-banner --redact -v; echo "exit code: $?"
 Finding:     GITHUB_TOKEN = "REDACTED
@@ -209,9 +209,9 @@ exit code: 0
 ```
 
 A freshly generated fake GitHub token in a throwaway folder is caught as `github-pat` (and
-redacted in the output). The real repository - every commit in its history - has no leaks. The
-fake token was never committed: GitHub's push protection would block it, and a secret that reaches
-Git history has to be treated as leaked even after it is deleted.
+redacted in gitleaks' own output). The real repository - every commit in its history at that
+point - had no leaks. The token value is masked with `*` in this document; see
+[the pipeline caught me](#the-pipeline-caught-me) for why.
 
 ### Image scan - Trivy
 
@@ -370,6 +370,46 @@ that fails, so **Push image** and **Deploy** never run:
 
 ![gate job failed](screenshots/16_job_gate_fail.png)
 
+### The pipeline caught me
+
+The first version of this README pasted the secret-scanning demo output above *including the fake
+token itself*. The next push to `main` ran the pipeline, gitleaks scanned the full history, found
+the token in commit `edfaca9`, and the gate blocked `main`:
+
+![run 4 blocked by my own README](screenshots/18_pipeline_caught_me.png)
+
+Run: [16 - DevSecOps pipeline #4](https://github.com/AnshulMohanty/DevOps-Assignment-101/actions/runs/37495885801)
+
+![gitleaks finding and fix](screenshots/17_pipeline_caught_me.png)
+
+```
+$ # DevSecOps run #4 on main failed at the Security gate - gitleaks, run the same way locally:
+$ docker run --rm -v "$(pwd -W):/repo" zricethezav/gitleaks:latest git /repo --no-banner --redact -v 2>&1 | grep -E 'RuleID|File|Line|Commit|Fingerprint|leaks found'
+RuleID:      github-pat
+File:        16_DevSecOps/README.md
+Line:        188
+Commit:      edfaca9b4ab855be04744004fc7978e7c706f087
+Fingerprint: edfaca9b4ab855be04744004fc7978e7c706f087:16_DevSecOps/README.md:github-pat:188
+4:32PM WRN leaks found: 1
+$ git log -1 --format='%h %s' edfaca9
+edfaca9 Add topic 16 README and screenshots
+
+$ # the token was a random fake, so: redact it in the README and record this one finding as a known false positive
+$ grep -v '^#' .gitleaksignore
+edfaca9b4ab855be04744004fc7978e7c706f087:16_DevSecOps/README.md:github-pat:188
+$ docker run --rm -v "$(pwd -W):/repo" zricethezav/gitleaks:latest git /repo --no-banner --redact 2>&1 | tail -2
+4:33PM INF scanned ~609382 bytes (609.38 KB) in 9.25s
+4:33PM INF no leaks found
+```
+
+This is the kind of mistake secret scanning exists for: nobody meant to commit a token - it came
+along inside documentation. Because this token was randomly generated and never valid, the fix was
+to mask it in the README and record that one finding in [.gitleaksignore](../.gitleaksignore) with
+a comment explaining why. The finding is pinned to that exact commit, file and line, so any *new*
+token is still caught. With a **real** token the order is different: revoke it first, because
+anything that reached a public Git history has to be treated as leaked - deleting or ignoring it
+afterwards does not un-leak it.
+
 ---
 
 Kubernetes deployment
@@ -467,6 +507,8 @@ What I understood
 - Deployment hardening (non-root, read-only filesystem, dropped capabilities) can break software that
   assumes it can write to disk - test it, as the gunicorn control socket showed.
 - `GITHUB_TOKEN` with `packages: write` replaces a stored registry password.
+- Secrets leak through documentation and example output, not just code - my own README tripped the
+  gate. Scanning the whole history on every push is what caught it.
 
 **Note on screenshots:** GitHub only shows job *log lines* to signed-in users, and no GitHub CLI login
 was available while this was done, so the CI evidence is the run and job pages (graph, statuses and
