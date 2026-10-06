@@ -410,6 +410,8 @@ token is still caught. With a **real** token the order is different: revoke it f
 anything that reached a public Git history has to be treated as leaked - deleting or ignoring it
 afterwards does not un-leak it.
 
+After the fix, [run #5](https://github.com/AnshulMohanty/DevOps-Assignment-101/actions/runs/37496791855) passed all 10 jobs again.
+
 ---
 
 Kubernetes deployment
