@@ -5,3 +5,8 @@ ingress:
   host: taskboard.local
 postgres:
   storage: 1Gi
+# The whole minikube node is one Docker container capped at ~2.7 GiB. With the monitoring stack
+# installed, 6 backend pods plus an in-cluster load generator starved it (see the README), so the
+# local cluster scales to 4 at most. A cloud node group would add nodes instead.
+hpa:
+  maxReplicas: 4

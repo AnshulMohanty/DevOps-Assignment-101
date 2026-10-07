@@ -1,0 +1,85 @@
+# Grafana dashboard for the TaskBoard backend, loaded by the Grafana sidecar (label grafana_dashboard=1).
+#   kubectl apply -f monitoring/taskboard-dashboard.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: taskboard-dashboard
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1"
+data:
+  taskboard.json: |
+    {
+      "uid": "taskboard",
+      "title": "TaskBoard - backend",
+      "tags": ["taskboard"],
+      "timezone": "browser",
+      "refresh": "10s",
+      "time": {"from": "now-30m", "to": "now"},
+      "schemaVersion": 39,
+      "panels": [
+        {
+          "type": "stat", "title": "Backend targets UP",
+          "gridPos": {"x": 0, "y": 0, "w": 6, "h": 5},
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "targets": [{"expr": "sum(up{job=\"taskboard-backend\"})", "refId": "A"}],
+          "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}},
+          "fieldConfig": {"defaults": {"thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "green", "value": 1}]}}}
+        },
+        {
+          "type": "stat", "title": "Requests / s (all handlers)",
+          "gridPos": {"x": 6, "y": 0, "w": 6, "h": 5},
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "targets": [{"expr": "sum(rate(http_requests_total{job=\"taskboard-backend\", handler!=\"/metrics\"}[1m]))", "refId": "A"}],
+          "options": {"colorMode": "value", "graphMode": "area", "reduceOptions": {"calcs": ["lastNotNull"]}},
+          "fieldConfig": {"defaults": {"unit": "reqps", "decimals": 1}}
+        },
+        {
+          "type": "stat", "title": "Error ratio (5xx, 5m)",
+          "gridPos": {"x": 12, "y": 0, "w": 6, "h": 5},
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "targets": [{"expr": "(sum(rate(http_requests_total{job=\"taskboard-backend\", status=\"5xx\"}[5m])) or vector(0)) / sum(rate(http_requests_total{job=\"taskboard-backend\"}[5m]))", "refId": "A"}],
+          "options": {"colorMode": "value", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}},
+          "fieldConfig": {"defaults": {"unit": "percentunit", "decimals": 2, "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "red", "value": 0.05}]}}}
+        },
+        {
+          "type": "stat", "title": "Backend replicas (HPA)",
+          "gridPos": {"x": 18, "y": 0, "w": 6, "h": 5},
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "targets": [{"expr": "kube_horizontalpodautoscaler_status_current_replicas{namespace=\"taskboard\"}", "refId": "A"}],
+          "options": {"colorMode": "value", "graphMode": "area", "reduceOptions": {"calcs": ["lastNotNull"]}}
+        },
+        {
+          "type": "timeseries", "title": "Request rate by endpoint",
+          "gridPos": {"x": 0, "y": 5, "w": 12, "h": 9},
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "targets": [{"expr": "sum by (method, handler) (rate(http_requests_total{job=\"taskboard-backend\", handler!=\"/metrics\"}[1m]))", "legendFormat": "{{method}} {{handler}}", "refId": "A"}],
+          "fieldConfig": {"defaults": {"unit": "reqps"}}
+        },
+        {
+          "type": "timeseries", "title": "Latency p50 / p95 / p99",
+          "gridPos": {"x": 12, "y": 5, "w": 12, "h": 9},
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "targets": [
+            {"expr": "histogram_quantile(0.50, sum by (le) (rate(http_request_duration_highr_seconds_bucket{job=\"taskboard-backend\"}[1m])))", "legendFormat": "p50", "refId": "A"},
+            {"expr": "histogram_quantile(0.95, sum by (le) (rate(http_request_duration_highr_seconds_bucket{job=\"taskboard-backend\"}[1m])))", "legendFormat": "p95", "refId": "B"},
+            {"expr": "histogram_quantile(0.99, sum by (le) (rate(http_request_duration_highr_seconds_bucket{job=\"taskboard-backend\"}[1m])))", "legendFormat": "p99", "refId": "C"}
+          ],
+          "fieldConfig": {"defaults": {"unit": "s"}}
+        },
+        {
+          "type": "timeseries", "title": "Backend CPU per pod (HPA target: 60% of 100m request)",
+          "gridPos": {"x": 0, "y": 14, "w": 12, "h": 9},
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "targets": [{"expr": "sum by (pod) (rate(container_cpu_usage_seconds_total{namespace=\"taskboard\", container=\"backend\"}[1m]))", "legendFormat": "{{pod}}", "refId": "A"}],
+          "fieldConfig": {"defaults": {"unit": "cores"}}
+        },
+        {
+          "type": "timeseries", "title": "Responses by status class",
+          "gridPos": {"x": 12, "y": 14, "w": 12, "h": 9},
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "targets": [{"expr": "sum by (status) (rate(http_requests_total{job=\"taskboard-backend\"}[1m]))", "legendFormat": "{{status}}", "refId": "A"}],
+          "fieldConfig": {"defaults": {"unit": "reqps"}}
+        }
+      ]
+    }

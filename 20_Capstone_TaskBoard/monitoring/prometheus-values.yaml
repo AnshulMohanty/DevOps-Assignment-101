@@ -1,6 +1,24 @@
+# helm upgrade --install kube-prometheus-stack prometheus-community/kube-prometheus-stack \
+#   -n monitoring --create-namespace -f monitoring/prometheus-values.yaml
 grafana:
   enabled: true
+  # The sidecar loads every ConfigMap labelled grafana_dashboard=1 as a dashboard
+  # (monitoring/taskboard-dashboard.yaml).
+  sidecar:
+    dashboards:
+      enabled: true
+      label: grafana_dashboard
+      searchNamespace: ALL
 prometheus:
   prometheusSpec:
+    # Pick up ServiceMonitors from every namespace, not only those labelled with this release.
     serviceMonitorSelectorNilUsesHelmValues: false
     serviceMonitorNamespaceSelector: {}
+    retention: 2d
+
+# minikube only: these control-plane components listen on 127.0.0.1 inside the node,
+# so Prometheus cannot reach them and they would show as DOWN targets.
+kubeEtcd: {enabled: false}
+kubeControllerManager: {enabled: false}
+kubeScheduler: {enabled: false}
+kubeProxy: {enabled: false}
