@@ -1,4 +1,4 @@
-# Topic 20 - CI/CD for the TaskBoard capstone in 20_Capstone_TaskBoard/.
+# Topic 20 - CI/CD for the TaskBoard demo project in 20_Demo_Project/.
 #
 #   TEST                    pytest (backend) + npm build (frontend)
 #   BUILD + SCAN + PUSH     two images tagged with the commit SHA -> Trivy (fail on fixable HIGH/CRITICAL) -> GHCR
@@ -13,12 +13,12 @@ on:
   push:
     branches: [main, "ci-demo/**"]
     paths:
-      - "20_Capstone_TaskBoard/**"
+      - "20_Demo_Project/**"
       - ".github/workflows/20-taskboard-cicd.yml"
   pull_request:
     branches: [main]
     paths:
-      - "20_Capstone_TaskBoard/**"
+      - "20_Demo_Project/**"
       - ".github/workflows/20-taskboard-cicd.yml"
   workflow_dispatch:
 
@@ -26,13 +26,13 @@ permissions:
   contents: read
 
 env:
-  APP_DIR: 20_Capstone_TaskBoard
+  APP_DIR: 20_Demo_Project
   IMAGE_PREFIX: ghcr.io/anshulmohanty/taskboard
 
 defaults:
   run:
     shell: bash
-    working-directory: 20_Capstone_TaskBoard
+    working-directory: 20_Demo_Project
 
 jobs:
   # ------------------------------------------------------------------ TEST

@@ -34,7 +34,7 @@ Contents
 | 17 | [Terraform and IaC](17_Terraform_IaC/README.md) | S3 demo through the full Terraform workflow, IAM/EC2/S3/VPC/DynamoDB/RDS write-ups | [notes](17_Terraform_IaC/LEARNING.md) |
 | 18 | [Cloud and Terraform in Action](18_Cloud_Terraform/README.md) | VPC, subnets, IGW, SG, EC2, IAM, S3 - dependencies, state, plan/apply/destroy | [notes](18_Cloud_Terraform/LEARNING.md) |
 | 19 | [Monitoring, Observability, GitOps](19_Monitoring_Observability_GitOps/README.md) | Prometheus, alerts, Grafana, Loki, Jaeger traces; Argo CD sync, self-heal, prune | [notes](19_Monitoring_Observability_GitOps/LEARNING.md) |
-| 20 | [Capstone demo: TaskBoard](20_Capstone_TaskBoard/README.md) | FastAPI + React + PostgreSQL through pytest, Docker, Trivy, GHCR, Terraform (VPC + EKS), Helm, Ingress, HPA, Prometheus/Grafana, troubleshooting | [notes](20_Capstone_TaskBoard/LEARNING.md) |
+| 20 | [Demo Project: TaskBoard](20_Demo_Project/README.md) | FastAPI + React + PostgreSQL through pytest, Docker, Trivy, GHCR, Terraform (VPC + EKS), Helm, Ingress, HPA, Prometheus/Grafana, troubleshooting | [notes](20_Demo_Project/LEARNING.md) |
 
 ---
 

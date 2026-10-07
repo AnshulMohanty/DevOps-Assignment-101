@@ -1,5 +1,5 @@
-DevOps Capstone Demo: TaskBoard – Homework
-==========================================
+Demo Project: TaskBoard – Homework
+=================================
 
 Name: Anshul Mohanty    Roll No: 24BCS10191    Section: A
 
@@ -9,6 +9,9 @@ Session 21 is the capstone. The class repository has two parts: the **TaskBoard 
 built in class (the code in `session21-python/`), and a brief for a separate final project. This folder is
 the **demo project**: I took TaskBoard, ran every stage of it on my machine and on GitHub, fixed what did
 not work, and recorded the results below. It follows the 15-step "final demo" from the session README.
+
+The folder was named `20_Capstone_TaskBoard` while the outputs below were captured, so the terminal window titles and a few command
+lines still show that path; it was renamed to `20_Demo_Project` afterwards.
 
 ```mermaid
 flowchart LR

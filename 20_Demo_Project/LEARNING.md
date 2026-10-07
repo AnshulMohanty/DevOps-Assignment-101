@@ -1,5 +1,5 @@
-DevOps Capstone Demo: TaskBoard – Learning Notes
-================================================
+Demo Project: TaskBoard – Learning Notes
+=======================================
 
 Name: Anshul Mohanty    Roll No: 24BCS10191    Section: A
 
