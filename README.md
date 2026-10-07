@@ -34,6 +34,7 @@ Contents
 | 17 | [Terraform and IaC](17_Terraform_IaC/README.md) | S3 demo through the full Terraform workflow, IAM/EC2/S3/VPC/DynamoDB/RDS write-ups | [notes](17_Terraform_IaC/LEARNING.md) |
 | 18 | [Cloud and Terraform in Action](18_Cloud_Terraform/README.md) | VPC, subnets, IGW, SG, EC2, IAM, S3 - dependencies, state, plan/apply/destroy | [notes](18_Cloud_Terraform/LEARNING.md) |
 | 19 | [Monitoring, Observability, GitOps](19_Monitoring_Observability_GitOps/README.md) | Prometheus, alerts, Grafana, Loki, Jaeger traces; Argo CD sync, self-heal, prune | [notes](19_Monitoring_Observability_GitOps/LEARNING.md) |
+| 20 | [Capstone demo: TaskBoard](20_Capstone_TaskBoard/README.md) | FastAPI + React + PostgreSQL through pytest, Docker, Trivy, GHCR, Terraform (VPC + EKS), Helm, Ingress, HPA, Prometheus/Grafana, troubleshooting | [notes](20_Capstone_TaskBoard/LEARNING.md) |
 
 ---
 
@@ -52,11 +53,11 @@ GHCR, Prometheus, Grafana, Jaeger, Argo CD), taken from the running systems.
 | Docker topics (05-07) | Docker Engine 29.5.3 via Docker Desktop |
 | Kubernetes topics (08-11) | **minikube v1.37.0**, single node, docker driver, containerd runtime, Kubernetes v1.37.0 |
 | Ingress (11) | NGINX ingress controller via `minikube addons enable ingress` |
-| Kubernetes topics (12-14, 16, 19) | **minikube v1.39.0**, profile `devops`, Kubernetes v1.37.0, metrics-server addon |
+| Kubernetes topics (12-14, 16, 19, 20) | **minikube v1.39.0**, profile `devops`, Kubernetes v1.37.0, metrics-server addon |
 | Helm (14) | Helm v4.1.4 |
-| CI/CD (15-16) | GitHub Actions on this repository (`.github/workflows/`), images published to GHCR |
+| CI/CD (15-16, 20) | GitHub Actions on this repository (`.github/workflows/`), images published to GHCR |
 | Security tools (16) | Bandit 1.9.4, pip-audit 2.10.1, gitleaks 8.30.1, Trivy 0.75.0, CodeQL |
-| Terraform (17-18) | Terraform 1.16.5, AWS provider 6.67.0, **LocalStack 4.14** as the AWS endpoint |
+| Terraform (17-18, 20) | Terraform 1.16.5, AWS provider 6.67.0 (5.100 in 20, required by the EKS module), **LocalStack 4.14** as the AWS endpoint |
 | Observability (19) | Prometheus 3.15, Grafana 13.2, Loki 3.7, Alloy 1.20, Jaeger 2.21, node-exporter, cAdvisor (Docker Compose) |
 | GitOps (19) | Argo CD v3.5.3 on minikube, syncing a folder of this repository |
 
