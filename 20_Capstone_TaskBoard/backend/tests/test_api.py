@@ -10,6 +10,7 @@ def test_root(client):
     response = client.get("/")
     assert response.status_code == 200
     assert response.json()["service"] == "TaskBoard API"
+    assert response.json()["version"] == "1.1.0"
 
 def test_create_task(client):
     response = client.post("/api/tasks", json={"title": "Deploy application", "priority": "HIGH", "assignee": "Student"})
