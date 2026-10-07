@@ -1,0 +1,16 @@
+{{- /* Only when the Prometheus Operator CRD exists - otherwise the install fails with "no matches for kind ServiceMonitor". */}}
+{{- if and .Values.monitoring.serviceMonitor.enabled (.Capabilities.APIVersions.Has "monitoring.coreos.com/v1/ServiceMonitor") }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "taskboard.backend" . }}
+  labels:
+    release: kube-prometheus-stack
+spec:
+  selector:
+    matchLabels: {app: taskboard-backend}
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 15s
+{{- end }}

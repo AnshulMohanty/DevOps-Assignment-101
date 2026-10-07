@@ -1,0 +1,171 @@
+# Topic 20 - CI/CD for the TaskBoard capstone in 20_Capstone_TaskBoard/.
+#
+#   TEST                    pytest (backend) + npm build (frontend)
+#   BUILD + SCAN + PUSH     two images tagged with the commit SHA -> Trivy (fail on fixable HIGH/CRITICAL) -> GHCR
+#   DEPLOY                  helm upgrade --install of those exact images into a kind cluster on the runner + smoke test
+#
+# Push and deploy only happen on main. Image names are lowercase on purpose: the repository owner
+# is "AnshulMohanty" and Docker rejects upper-case letters in an image name.
+
+name: "20 - TaskBoard CI/CD"
+
+on:
+  push:
+    branches: [main, "ci-demo/**"]
+    paths:
+      - "20_Capstone_TaskBoard/**"
+      - ".github/workflows/20-taskboard-cicd.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "20_Capstone_TaskBoard/**"
+      - ".github/workflows/20-taskboard-cicd.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  APP_DIR: 20_Capstone_TaskBoard
+  IMAGE_PREFIX: ghcr.io/anshulmohanty/taskboard
+
+defaults:
+  run:
+    shell: bash
+    working-directory: 20_Capstone_TaskBoard
+
+jobs:
+  # ------------------------------------------------------------------ TEST
+  test:
+    name: Test backend + build frontend
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - name: Install backend dependencies
+        working-directory: ${{ env.APP_DIR }}/backend
+        run: pip install -r requirements-dev.txt
+
+      - name: Run backend tests
+        working-directory: ${{ env.APP_DIR }}/backend
+        run: pytest -v
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+
+      - name: Build frontend
+        working-directory: ${{ env.APP_DIR }}/frontend
+        run: |
+          npm ci
+          npm run build
+          ls -la dist dist/assets
+
+      - name: Lint the Helm chart
+        run: helm lint helm/taskboard -f helm/taskboard/values-minikube.yaml
+
+  # ------------------------------------------------------------------ BUILD + SCAN + PUSH
+  build-scan-push:
+    name: Build, scan and push images
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Build images (tag = commit SHA)
+        run: |
+          for c in backend frontend; do
+            docker build \
+              --label org.opencontainers.image.source=https://github.com/${{ github.repository }} \
+              --label org.opencontainers.image.revision=${{ github.sha }} \
+              -t "$IMAGE_PREFIX-$c:$GITHUB_SHA" ./$c
+          done
+          docker images "$IMAGE_PREFIX-*"
+
+      - name: Trivy - backend
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: ${{ env.IMAGE_PREFIX }}-backend:${{ github.sha }}
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
+
+      - name: Trivy - frontend
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: ${{ env.IMAGE_PREFIX }}-frontend:${{ github.sha }}
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
+          skip-setup-trivy: true
+
+      - name: Log in to GHCR
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push images
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        run: |
+          for c in backend frontend; do
+            docker push "$IMAGE_PREFIX-$c:$GITHUB_SHA"
+          done
+
+  # ------------------------------------------------------------------ DEPLOY
+  deploy:
+    name: Deploy with Helm
+    needs: build-scan-push
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+    environment:
+      name: taskboard
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Create a kind cluster on the runner
+        uses: helm/kind-action@v1
+        with:
+          cluster_name: taskboard
+
+      - name: Namespace + registry credentials
+        run: |
+          kubectl apply -f k8s/namespace.yaml
+          kubectl create secret docker-registry ghcr -n taskboard \
+            --docker-server=ghcr.io \
+            --docker-username=${{ github.actor }} \
+            --docker-password=${{ secrets.GITHUB_TOKEN }}
+
+      - name: helm upgrade --install
+        run: |
+          helm upgrade --install taskboard ./helm/taskboard -n taskboard \
+            --set backend.tag=$GITHUB_SHA \
+            --set frontend.tag=$GITHUB_SHA \
+            --set "imagePullSecrets[0].name=ghcr" \
+            --set postgres.storage=1Gi \
+            --wait --timeout 5m
+          helm list -n taskboard
+          kubectl get pods,svc,hpa -n taskboard
+
+      - name: Smoke test through the frontend Service
+        run: |
+          kubectl port-forward -n taskboard service/taskboard-frontend 8080:80 >/dev/null 2>&1 &
+          sleep 3
+          curl -sf localhost:8080/ | grep -o '<title>.*</title>'
+          curl -sf localhost:8080/health; echo
+          curl -sf -X POST localhost:8080/api/tasks -H 'Content-Type: application/json' \
+            -d '{"title":"Smoke test from CI","priority":"HIGH"}'; echo
+          curl -sf localhost:8080/api/tasks/stats; echo
+          kubectl get deploy -n taskboard -o custom-columns='DEPLOYMENT:.metadata.name,IMAGE:.spec.template.spec.containers[0].image'

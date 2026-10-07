@@ -1,0 +1,25 @@
+# Rendered at container start by the nginx image's entrypoint (envsubst):
+# ${BACKEND_URL} is "http://backend:8000" in Docker Compose and the backend Service in Kubernetes.
+server {
+  listen 8080;
+  server_name _;
+  root /usr/share/nginx/html;
+  index index.html;
+
+  location / {
+    try_files $uri /index.html;
+  }
+
+  # Local Docker Compose and Kubernetes service-to-service API proxy.
+  location /api/ {
+    proxy_pass ${BACKEND_URL};
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+  }
+
+  location /health {
+    proxy_pass ${BACKEND_URL}/health;
+  }
+}

@@ -1,0 +1,7 @@
+# Local cluster (minikube profile "devops"): everything from values.yaml, plus the Ingress
+# on taskboard.local and a smaller database volume.
+ingress:
+  enabled: true
+  host: taskboard.local
+postgres:
+  storage: 1Gi

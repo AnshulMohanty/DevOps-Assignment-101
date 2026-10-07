@@ -1,0 +1,28 @@
+frontend:
+  image: ghcr.io/anshulmohanty/taskboard-frontend
+  tag: latest            # CI deploys with --set frontend.tag=<git sha>
+backend:
+  image: ghcr.io/anshulmohanty/taskboard-backend
+  tag: latest            # CI deploys with --set backend.tag=<git sha>
+replicaCount: 2
+namespace: taskboard
+imagePullSecrets: []
+postgres:
+  database: taskboard
+  username: taskboard
+  password: taskboard    # classroom default - override with --set postgres.password=... outside a demo
+  storage: 5Gi
+ingress:
+  enabled: false
+  host: taskboard.local
+hpa:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 6
+  targetCPUUtilizationPercentage: 60
+resources:
+  requests: {cpu: 100m, memory: 256Mi}
+  limits: {cpu: 500m, memory: 512Mi}
+monitoring:
+  serviceMonitor:
+    enabled: true

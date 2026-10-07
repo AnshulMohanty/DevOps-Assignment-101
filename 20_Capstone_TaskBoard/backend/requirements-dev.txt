@@ -1,0 +1,4 @@
+# Test-only tools - installed by CI, kept out of the production image.
+-r requirements.txt
+pytest==9.1.1
+httpx2==2.13.1
